@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
-import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const REGION = process.env.REACT_APP_AWS_REGION || 'us-east-1';
-const BUCKET_NAME = process.env.REACT_APP_S3_BUCKET_NAME;
 
 // Página de productos
 const Products = () => {
@@ -67,19 +64,17 @@ const S3Objects = () => {
 
   useEffect(() => {
     const fetchS3Objects = async () => {
-      const s3Client = new S3Client({ region: REGION });
       try {
-        const command = new ListObjectsV2Command({ Bucket: BUCKET_NAME });
-        const response = await s3Client.send(command);
-        setObjects(response.Contents || []);
+        const response = await fetch(`${API_URL}/api/s3`);
+        if (!response.ok) throw new Error('Error fetching S3 objects');
+        const data = await response.json();
+        setObjects(data);
       } catch (err) {
-        console.error('Error fetching S3 objects:', err.message);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchS3Objects();
   }, []);
 
@@ -92,7 +87,7 @@ const S3Objects = () => {
       <ul className="list-group mt-3">
         {objects.map((obj) => (
           <li key={obj.Key} className="list-group-item">
-            {obj.Key} - {obj.Size} bytes
+            {obj.Key}
           </li>
         ))}
       </ul>
